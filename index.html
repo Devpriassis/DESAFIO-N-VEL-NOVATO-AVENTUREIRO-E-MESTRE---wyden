@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Batalha Naval</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="header">
+    <h1>Batalha Naval</h1>
+    <p>Clique nas células para tentar acertar os navios inimigos!</p>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="stats">
+        <div><strong>Acertos:</strong> <span id="hits">0</span></div>
+        <div><strong>Tentativas:</strong> <span id="shots">0</span></div>
+        <div><strong>Navios restantes:</strong> <span id="ships-remaining">0</span></div>
+      </div>
+      <div class="controls">
+        <button id="reset">Reiniciar jogo</button>
+        <label class="toggle">
+          <input type="checkbox" id="show-hints">
+          Mostrar dicas (bordas de navios)
+        </label>
+      </div>
+      <div id="message" class="message"></div>
+    </section>
+
+    <section class="board-wrapper">
+      <div id="board" class="board" aria-label="Tabuleiro 10x10"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Feito com HTML, CSS e JavaScript • Single Player • Grade 10x10</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

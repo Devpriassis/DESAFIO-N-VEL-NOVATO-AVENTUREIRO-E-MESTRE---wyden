@@ -1,0 +1,33 @@
+# Batalha Naval (HTML, CSS e JS)
+
+Um jogo simples de Batalha Naval (single-player) em uma grade 10x10, com posicionamento aleatório de navios, contagem de acertos e tentativas, e botão de reiniciar.
+
+## Como jogar
+- Clique nas células para tentar encontrar os navios.
+- Vermelho = acerto; cinza = água.
+- Afunde todos os navios para vencer.
+- Use o botão "Reiniciar jogo" para começar uma nova partida.
+- Opcional: ative "Mostrar dicas" para visualizar bordas dos navios não revelados.
+
+## Tecnologias
+- HTML
+- CSS
+- JavaScript (vanilla)
+
+## Executar localmente
+1. Baixe ou clone este repositório.
+2. Abra `index.html` no navegador.
+3. Pronto!
+
+## Publicar no GitHub Pages
+1. Faça push dos arquivos para um repositório no GitHub.
+2. Vá em Settings > Pages > Branch: `main` (pasta `/root`).
+3. Salve e acesse a URL do GitHub Pages gerada.
+
+## Estrutura
+- `index.html` — estrutura da página.
+- `style.css` — estilos visuais.
+- `script.js` — lógica do jogo.
+
+## Licença
+MIT

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Xadrez - Movimentação de Peças</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header class="header">
+    <h1>Xadrez</h1>
+    <p>Clique em uma peça e depois em uma casa válida para movimentá-la.</p>
+  </header>
+
+  <main class="container">
+    <section class="board-wrapper">
+      <div id="board" class="board"></div>
+    </section>
+    <section class="panel">
+      <button id="reset">Reiniciar Tabuleiro</button>
+      <div id="message" class="message"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <small>Feito com HTML, CSS e JavaScript • Movimentação básica

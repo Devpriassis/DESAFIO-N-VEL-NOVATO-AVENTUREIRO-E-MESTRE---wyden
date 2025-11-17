@@ -1,0 +1,228 @@
+// Configuração do jogo
+const SIZE = 10;
+const SHIPS = [
+  { name: 'Porta-aviões', size: 5 },
+  { name: 'Encouraçado', size: 4 },
+  { name: 'Cruzador', size: 3 },
+  { name: 'Submarino', size: 3 },
+  { name: 'Destroyer', size: 2 },
+];
+
+let board = [];
+let shipCells = new Set();
+let hits = 0;
+let shots = 0;
+let shipsRemaining = SHIPS.length;
+let gameOver = false;
+
+const ui = {
+  board: document.getElementById('board'),
+  hits: document.getElementById('hits'),
+  shots: document.getElementById('shots'),
+  shipsRemaining: document.getElementById('ships-remaining'),
+  reset: document.getElementById('reset'),
+  message: document.getElementById('message'),
+  showHints: document.getElementById('show-hints'),
+};
+
+function idx(row, col) { return row * SIZE + col; }
+
+function createEmptyBoard() {
+  board = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+  shipCells.clear();
+}
+
+function randomInt(max) { return Math.floor(Math.random() * max); }
+
+function canPlaceShip(row, col, size, horizontal) {
+  if (horizontal) {
+    if (col + size > SIZE) return false;
+    for (let c = col; c < col + size; c++) if (board[row][c] !== 0) return false;
+  } else {
+    if (row + size > SIZE) return false;
+    for (let r = row; r < row + size; r++) if (board[r][col] !== 0) return false;
+  }
+  // Evitar tocar bordas de outros navios (opcional)
+  const touched = new Set();
+  const positions = [];
+  for (let i = 0; i < size; i++) {
+    const r = horizontal ? row : row + i;
+    const c = horizontal ? col + i : col;
+    positions.push([r, c]);
+  }
+  const dirs = [-1, 0, 1];
+  for (const [r, c] of positions) {
+    for (const dr of dirs) {
+      for (const dc of dirs) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) continue;
+        touched.add(idx(nr, nc));
+      }
+    }
+  }
+  for (const pos of touched) {
+    const r = Math.floor(pos / SIZE);
+    const c = pos % SIZE;
+    if (board[r][c] === 1) return false;
+  }
+  return true;
+}
+
+function placeShip(size) {
+  let tries = 0;
+  while (tries < 500) {
+    const horizontal = Math.random() < 0.5;
+    const row = randomInt(SIZE);
+    const col = randomInt(SIZE);
+    if (canPlaceShip(row, col, size, horizontal)) {
+      for (let i = 0; i < size; i++) {
+        const r = horizontal ? row : row + i;
+        const c = horizontal ? col + i : col;
+        board[r][c] = 1;
+        shipCells.add(idx(r, c));
+      }
+      return true;
+    }
+    tries++;
+  }
+  return false;
+}
+
+function placeAllShips() {
+  for (const s of SHIPS) {
+    const ok = placeShip(s.size);
+    if (!ok) {
+      // fallback simples: reinicia e tenta novamente
+      createEmptyBoard();
+      return placeAllShips();
+    }
+  }
+}
+
+function renderBoard() {
+  ui.board.innerHTML = '';
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const cell = document.createElement('button');
+      cell.className = 'cell';
+      cell.setAttribute('data-pos', `${r},${c}`);
+      cell.setAttribute('aria-label', `Linha ${r + 1}, Coluna ${c + 1}`);
+      cell.addEventListener('click', onCellClick);
+      ui.board.appendChild(cell);
+    }
+  }
+}
+
+function updateStats() {
+  ui.hits.textContent = hits;
+  ui.shots.textContent = shots;
+  ui.shipsRemaining.textContent = shipsRemaining;
+}
+
+function showMessage(text) {
+  ui.message.textContent = text;
+}
+
+function checkShipSunk(r, c) {
+  // Checa se a célula fazia parte de um navio completo afundado
+  // Varre horizontal e vertical a partir da célula atingida
+  const isShip = (rr, cc) => rr >= 0 && rr < SIZE && cc >= 0 && cc < SIZE && board[rr][cc] === 2;
+
+  // horizontal
+  let left = c; while (left - 1 >= 0 && (board[r][left - 1] === 1 || board[r][left - 1] === 2)) left--;
+  let right = c; while (right + 1 < SIZE && (board[r][right + 1] === 1 || board[r][right + 1] === 2)) right++;
+
+  let horizontalShip = false, horizontalSunk = true;
+  for (let cc = left; cc <= right; cc++) {
+    if (board[r][cc] === 1) horizontalShip = true;
+    if (board[r][cc] === 1) horizontalSunk = false;
+  }
+
+  // vertical
+  let up = r; while (up - 1 >= 0 && (board[up - 1][c] === 1 || board[up - 1][c] === 2)) up--;
+  let down = r; while (down + 1 < SIZE && (board[down + 1][c] === 1 || board[down + 1][c] === 2)) down++;
+
+  let verticalShip = false, verticalSunk = true;
+  for (let rr = up; rr <= down; rr++) {
+    if (board[rr][c] === 1) verticalShip = true;
+    if (board[rr][c] === 1) verticalSunk = false;
+  }
+
+  // Se detectou segmento de navio e está totalmente 2 (atingido), considera afundado
+  if ((horizontalShip && horizontalSunk) || (verticalShip && verticalSunk)) {
+    shipsRemaining = Math.max(0, shipsRemaining - 1);
+    showMessage('Você afundou um navio!');
+  }
+}
+
+function onCellClick(e) {
+  if (gameOver) return;
+  const cell = e.currentTarget;
+  const [r, c] = cell.getAttribute('data-pos').split(',').map(Number);
+
+  // Evitar duplo clique em mesma célula
+  if (cell.classList.contains('hit') || cell.classList.contains('miss')) return;
+
+  shots++;
+  if (board[r][c] === 1) {
+    // Acerto
+    board[r][c] = 2;
+    hits++;
+    cell.classList.add('hit');
+    cell.textContent = '✸';
+    showMessage('Acertou!');
+    checkShipSunk(r, c);
+  } else {
+    // Erro
+    board[r][c] = -1;
+    cell.classList.add('miss');
+    cell.textContent = '•';
+    showMessage('Água...');
+  }
+
+  updateStats();
+  checkWin();
+}
+
+function checkWin() {
+  if (hits === shipCells.size) {
+    gameOver = true;
+    showMessage('Vitória! Todos os navios foram destruídos!');
+    // Revela automaticamente todas células restantes (opcional)
+    revealHints(true);
+  }
+}
+
+function revealHints(active) {
+  const cells = ui.board.querySelectorAll('.cell');
+  for (const cell of cells) {
+    const [r, c] = cell.getAttribute('data-pos').split(',').map(Number);
+    const isShipCell = shipCells.has(idx(r, c));
+    const already = cell.classList.contains('hit') || cell.classList.contains('miss');
+    if (active && isShipCell && !already) {
+      cell.classList.add('hint');
+    } else {
+      cell.classList.remove('hint');
+    }
+  }
+}
+
+function resetGame() {
+  hits = 0;
+  shots = 0;
+  shipsRemaining = SHIPS.length;
+  gameOver = false;
+  showMessage('');
+  createEmptyBoard();
+  placeAllShips();
+  renderBoard();
+  updateStats();
+  revealHints(ui.showHints.checked);
+}
+
+// Eventos UI
+ui.reset.addEventListener('click', resetGame);
+ui.showHints.addEventListener('change', (e) => revealHints(e.target.checked));
+
+// Inicialização
+resetGame();
